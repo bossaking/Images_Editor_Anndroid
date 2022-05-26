@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Images_Editor</string>
+    <string name="select_image">Wybierz obrazek</string>
+    <string name="make_photo">Zrób zdjęcie</string>
+    <string name="or">- lub -</string>
+    <string name="image">image</string>
+</resources>
