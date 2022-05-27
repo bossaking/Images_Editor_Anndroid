@@ -3,6 +3,6 @@
     <string name="select_image">Wybierz obrazek</string>
     <string name="make_photo">Zrób zdjęcie</string>
     <string name="or">- lub -</string>
-    <string name="image">image</string>
-    <string name="save">Save</string>
+    <string name="image" translatable="false">image</string>
+    <string name="save" translatable="false">Save</string>
 </resources>
