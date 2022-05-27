@@ -1,36 +1,26 @@
 package com.example.images_editor;
 
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
 import android.Manifest;
-import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Calendar;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
@@ -79,16 +69,32 @@ public class MainActivity extends AppCompatActivity {
 
     private void takePhoto() {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        takePhotoResultLauncher.launch(intent);
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            // Create the File where the photo should go
+            File photoFile = null;
+            try {
+                photoFile = createImageFile();
+            } catch (IOException ex) {
+                Toast.makeText(this, ex.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+            }
+            if (photoFile != null) {
+                Uri photoURI = FileProvider.getUriForFile(this,
+                        "com.example.android.fileprovider",
+                        photoFile);
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+                takePhotoResultLauncher.launch(intent);
+            }
+        }else{
+            Toast.makeText(this, "LOL", Toast.LENGTH_LONG).show();
+        }
     }
 
     ActivityResultLauncher<Intent> takePhotoResultLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
                 if (result.getResultCode() == RESULT_OK) {
-                    Bitmap image = Objects.requireNonNull(result.getData()).getParcelableExtra("data");
                     try {
-                        Uri uri = savePhotoToStorage(image);
+                        Uri uri = galleryAddPic();
                         openEditorActivity(uri);
                     } catch (Exception e) {
                         Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
@@ -110,37 +116,28 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public Uri savePhotoToStorage(Bitmap bitmap) throws Exception {
 
-        String fileName = getCurrentTimeString() + ".jpg";
-
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName);
-        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpg");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DCIM);
-            values.put(MediaStore.MediaColumns.IS_PENDING, 1);
-        } else {
-            File directory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
-            File file = new File(directory, fileName);
-            values.put(MediaStore.MediaColumns.DATA, file.getAbsolutePath());
-        }
-
-        Uri uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-        OutputStream output = getContentResolver().openOutputStream(uri);
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, output);
-
-        return uri;
+String currentPhotoPath;
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+        currentPhotoPath = image.getAbsolutePath();
+        return image;
     }
 
-    public String getCurrentTimeString() {
-        int yyyy = Calendar.getInstance().get(Calendar.YEAR);
-        int MM = Calendar.getInstance().get(Calendar.MONTH) + 1;
-        int dd = Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
-        int hh = Calendar.getInstance().get(Calendar.HOUR);
-        int mm = Calendar.getInstance().get(Calendar.MINUTE);
-        int ss = Calendar.getInstance().get(Calendar.SECOND);
-
-        return yyyy + "-" + MM + "-" + dd + " " + hh + ":" + mm + ":" + ss;
+    private Uri galleryAddPic() {
+        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        File f = new File(currentPhotoPath);
+        Uri contentUri = Uri.fromFile(f);
+        mediaScanIntent.setData(contentUri);
+        this.sendBroadcast(mediaScanIntent);
+        return contentUri;
     }
 }
