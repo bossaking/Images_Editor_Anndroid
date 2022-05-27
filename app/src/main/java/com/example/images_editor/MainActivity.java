@@ -50,6 +50,12 @@ public class MainActivity extends AppCompatActivity {
             checkCameraPermissions();
             takePhoto();
         });
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) !=
+                PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]
+                    {Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
+        }
     }
 
     private void getImageFromStorage() {
@@ -64,9 +70,8 @@ public class MainActivity extends AppCompatActivity {
                 if (result.getResultCode() == RESULT_OK) {
                     Uri imageUri = Objects.requireNonNull(result.getData()).getData();
                     try {
-                        Bitmap actualImage = getBitmapFromUri(this.getContentResolver(), imageUri);
                         openEditorActivity(imageUri);
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
                     }
                 }
@@ -86,18 +91,10 @@ public class MainActivity extends AppCompatActivity {
                         Uri uri = savePhotoToStorage(image);
                         openEditorActivity(uri);
                     } catch (Exception e) {
-                        Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_LONG);
+                        Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
                     }
                 }
             });
-
-    private Bitmap getBitmapFromUri(ContentResolver cr, Uri uri)
-            throws IOException {
-        InputStream input = cr.openInputStream(uri);
-        Bitmap bitmap = BitmapFactory.decodeStream(input);
-        input.close();
-        return bitmap;
-    }
 
     private void openEditorActivity(Uri uri) {
         Intent intent = new Intent(this, EditImageActivity.class);

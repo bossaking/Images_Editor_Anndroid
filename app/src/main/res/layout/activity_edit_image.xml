@@ -16,10 +16,16 @@
         android:layout_weight="1"
         android:layout_gravity="top"
         android:padding="10dp"/>
-    
-    <Button
-        android:layout_gravity="bottom"
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/filtersRecyclerView"
         android:layout_width="match_parent"
-        android:layout_height="140dp"/>
+        android:layout_height="150sp" />
+
+<!--    <Button-->
+<!--        android:id="@+id/testButton"-->
+<!--        android:layout_gravity="bottom"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="140dp"/>-->
 
 </LinearLayout>
